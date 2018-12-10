@@ -18,6 +18,7 @@ module Fastlane
       
             UI.important("Please create a new, private git repository")
             UI.important("to store the keystores there")
+
             url = UI.input("URL of the Git Repo: ")
       
             template.gsub!("[[GIT_URL]]", url)

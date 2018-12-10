@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.email         = 'jyrno42@gmail.com'
 
   spec.summary       = 'Easily sync your keystores across your team using git'
-  # spec.homepage      = "https://github.com/<GITHUB_USERNAME>/fastlane-plugin-flint"
+  spec.homepage      = "https://github.com/jyrno42/fastlane-plugin-flint"
   spec.license       = "MIT"
 
   spec.files         = Dir["lib/**/*"] + %w(README.md LICENSE)
