@@ -6,10 +6,13 @@ git_url("[[GIT_URL]]")
 type("development") # The default type, can be: development or release
 
 # app_identifier(["tools.fastlane.app", "tools.fastlane.app2"])
+# keystore_properties_path("../keystore.properties")
+# target_dir("../app/")
 
 # Params for the generated keys
 # full_name("Your name")
 # orgization("")
 # orgization_unit("")
 # city("")
+# state("")
 # country("") # 2 letter country code, e.g EE
