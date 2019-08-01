@@ -8,10 +8,17 @@ module Fastlane
     class ChangePassword
       def self.update(params: nil, from: nil, to: nil)
         ensure_ui_interactive
+
         from ||= ChangePassword.ask_password(message: "Old passphrase for Git Repo: ", confirm: false)
+
         to ||= ChangePassword.ask_password(message: "New passphrase for Git Repo: ", confirm: true)
+
         GitHelper.clear_changes
-        encrypt = Encrypt.new
+
+        encrypt = Encrypt.configure(
+          git_url: params[:git_url]
+        )
+
         workspace = GitHelper.clone(params[:git_url],
                                     params[:shallow_clone],
                                     manual_password: from,
@@ -19,10 +26,11 @@ module Fastlane
                                     branch: params[:git_branch],
                                     git_full_name: params[:git_full_name],
                                     git_user_email: params[:git_user_email],
-                                    clone_branch_directly: params[:clone_branch_directly], 
+                                    clone_branch_directly: params[:clone_branch_directly],
                                     encrypt: encrypt)
-        encrypt.clear_password(params[:git_url])
-        encrypt.store_password(params[:git_url], to)
+
+        encrypt.clear_password
+        encrypt.store_password(to)
 
         if params[:app_identifier].kind_of?(Array)
           app_identifiers = params[:app_identifier]
@@ -34,11 +42,24 @@ module Fastlane
         for cert_type in Flint.environments do
           alias_name = "%s-%s" % [app_identifier, cert_type]
           keystore_name = "%s.keystore" % alias_name
-          Flint::Generator.update_keystore_password(workspace, keystore_name, alias_name, from, to)
+          Flint::Generator.update_keystore_password(
+            workspace,
+            keystore_name,
+            alias_name,
+            from,
+            to
+          )
         end
 
         message = "[fastlane] Changed passphrase"
-        GitHelper.commit_changes(workspace, message, params[:git_url], params[:git_branch], nil, encrypt)
+        GitHelper.commit_changes(
+          workspace,
+          message,
+          params[:git_url],
+          params[:git_branch],
+          nil,
+          encrypt
+        )
       end
 
       def self.ask_password(message: "Passphrase for Git Repo: ", confirm: true)

@@ -67,11 +67,11 @@ module Fastlane
                                       git_branch: branch,
                                   shallow_clone: shallow_clone },
                                             from: "",
-                                              to: encrypt.password(git_url))
+                                              to: encrypt.password)
           return self.clone(git_url, shallow_clone)
         end
 
-        encrypt.decrypt_repo(path: @dir, git_url: git_url, manual_password: manual_password)
+        encrypt.decrypt_repo(path: @dir, manual_password: manual_password)
 
         return @dir
       end
@@ -98,7 +98,7 @@ module Fastlane
         Dir.chdir(path) do
           return if `git status`.include?("nothing to commit")
 
-          encrypt.encrypt_repo(path: path, git_url: git_url)
+          encrypt.encrypt_repo(path: path)
           commands = []
 
           if files_to_commmit.count > 0 # e.g. for nuke this is treated differently

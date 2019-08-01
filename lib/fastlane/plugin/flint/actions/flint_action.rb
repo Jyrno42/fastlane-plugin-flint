@@ -26,7 +26,9 @@ module Fastlane
                                           hide_keys: [:workspace],
                                               title: "Summary for flint #{Fastlane::VERSION}")
 
-        encrypt = Flint::Encrypt.new
+        encrypt = Flint::Encrypt.configure(
+          git_url: params[:git_url]
+        )
         params[:workspace] = Flint::GitHelper.clone(params[:git_url],
                                             params[:shallow_clone],
                                             skip_docs: params[:skip_docs],
@@ -35,56 +37,56 @@ module Fastlane
                                             git_user_email: params[:git_user_email],
                                             clone_branch_directly: params[:clone_branch_directly],
                                             encrypt: encrypt)
-  
+
         if params[:app_identifier].kind_of?(Array)
           app_identifiers = params[:app_identifier]
         else
           app_identifiers = params[:app_identifier].to_s.split(/\s*,\s*/).uniq
         end
-  
+
         # sometimes we get an array with arrays, this is a bug. To unblock people using flint, I suggest we flatten!
         # then in the future address the root cause of https://github.com/fastlane/fastlane/issues/11324
         app_identifiers.flatten!
-  
+
         # Keystore
-        password = encrypt.password(params[:git_url])
+        password = encrypt.password
         keystore_name, files_to_commmit = fetch_keystore(params: params, app_identifier: app_identifiers[0], password: password)
-  
+
         # Done
         if files_to_commmit.count > 0 && !params[:readonly]
           message = Flint::GitHelper.generate_commit_message(params)
           Flint::GitHelper.commit_changes(params[:workspace], message, params[:git_url], params[:git_branch], files_to_commmit, encrypt)
         end
-  
+
         # Print a summary table for each app_identifier
         app_identifiers.each do |app_identifier|
           Flint::TablePrinter.print_summary(app_identifier: app_identifier, type: params[:type], keystore_name: keystore_name)
         end
-  
+
         UI.success("All required keystores are installed 🙌".green)
       ensure
         Flint::GitHelper.clear_changes
       end
-  
+
       def self.fetch_keystore(params: nil, app_identifier: nil, password: nil)
         cert_type = Flint.cert_type_sym(params[:type])
         files_to_commmit = []
-  
+
         app_identifier = app_identifier.gsub! '.', '_'
-  
+
         alias_name = "%s-%s" % [app_identifier, cert_type.to_s]
 
         keystore_name = "%s.keystore" % [alias_name]
         target_path = File.join(params[:target_dir], keystore_name)
-  
+
         certs = Dir[File.join(params[:workspace], "certs", keystore_name)]
-  
+
         if certs.count == 0
           UI.important("Couldn't find a valid keystore in the git repo for #{cert_type}... creating one for you now")
           UI.crash!("No code signing keystore found and can not create a new one because you enabled `readonly`") if params[:readonly]
           cert_path = Flint::Generator.generate_keystore(params, keystore_name, alias_name, password)
           files_to_commmit << cert_path
-  
+
           # install and activate the keystore
           UI.verbose("Installing keystore '#{keystore_name}'")
           Flint::Utils.import(cert_path, target_path, keystore_name, alias_name, password)
@@ -92,23 +94,23 @@ module Fastlane
         else
           cert_path = certs.last
           UI.message("Installing keystore...")
-  
+
           if Flint::Utils.installed?(cert_path, target_path)
             UI.verbose("Keystore '#{File.basename(cert_path)}' is already installed on this machine")
           else
             UI.verbose("Installing keystore '#{keystore_name}'")
             Flint::Utils.import(cert_path, target_path, keystore_name, alias_name, password)
           end
-  
+
           # Print keystore info
           puts("")
           puts(Flint::Utils.get_keystore_info(cert_path, password))
           puts("")
-  
+
           # Activate the cert
           Flint::Utils.activate(keystore_name, alias_name, password, params[:keystore_properties_path])
         end
-  
+
         return File.basename(cert_path).gsub(".keystore", ""), files_to_commmit
       end
 
