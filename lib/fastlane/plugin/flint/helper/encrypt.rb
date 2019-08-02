@@ -81,7 +81,8 @@ module Fastlane
             UI.user_error!("Try setting the FLINT_PASSWORD environment variable, or temporarily enable interactive mode to store a password.")
           else
             UI.important("Enter the passphrase that should be used to encrypt/decrypt your keystores")
-            UI.important("Make sure to remember the password, as you'll need it when you run flint again")
+            UI.important("This passphrase is specific per repository and will be stored in your local keychain")
+            UI.important("Make sure to remember the password, as you'll need it when you run flint on a different machine")
             password = ChangePassword.ask_password(confirm: true)
             store_password(password)
           end
