@@ -59,24 +59,15 @@ module Fastlane
         Security::InternetPassword.add(server_name(self.git_url), "", password)
       end
 
-      def clear_password()
+      def clear_password
         Security::InternetPassword.delete(server: server_name(self.git_url))
-      end
-
-      private
-
-      def iterate(source_path)
-        Dir[File.join(source_path, "**", "*.{keystore}")].each do |path|
-          next if File.directory?(path)
-          yield(path)
-        end
       end
 
       def server_name(git_url)
         ["flint", git_url].join("_")
       end
 
-      def password()
+      def password
         password = ENV["FLINT_PASSWORD"]
         unless password
           item = Security::InternetPassword.find(server: server_name(self.git_url))
@@ -97,6 +88,15 @@ module Fastlane
         end
 
         return password
+      end
+
+      private
+
+      def iterate(source_path)
+        Dir[File.join(source_path, "**", "*.{keystore}")].each do |path|
+          next if File.directory?(path)
+          yield(path)
+        end
       end
 
       # We encrypt with MD5 because that was the most common default value in older fastlane versions which used the local OpenSSL installation
