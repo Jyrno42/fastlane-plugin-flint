@@ -6,6 +6,10 @@ require_relative '../helper/encrypt'
 
 module Fastlane
   module Actions
+    module SharedValues
+      FLINT_KEYPROPERTIES_OUTPUT_PATH = :FLINT_KEYPROPERTIES_OUTPUT_PATH
+    end
+
     class FlintAction < Action
       def self.description
         Flint::DESCRIPTION
@@ -108,7 +112,11 @@ module Fastlane
           puts("")
 
           # Activate the cert
-          Flint::Utils.activate(keystore_name, alias_name, password, params[:keystore_properties_path])
+          keystore_properties_path = params[:keystore_properties_path]
+          Flint::Utils.activate(keystore_name, alias_name, password, keystore_properties_path)
+
+          Actions.lane_context[SharedValues::FLINT_KEYPROPERTIES_OUTPUT_PATH] =
+            File.expand_path(keystore_properties_path)
         end
 
         return File.basename(cert_path).gsub(".keystore", ""), files_to_commmit
