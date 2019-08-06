@@ -19,8 +19,8 @@ module Fastlane
         country = params[:country]
         valid_days = 10000 # > 27 years
 
-        cmd = "keytool -genkey -v -keystore %s -alias %s " % [output_path, alias_name]
-        cmd << "-keyalg RSA -keysize 2048 -validity %s -keypass %s -storepass %s " % [valid_days, password, password]
+        cmd = "keytool -genkey -v -keystore '%s' -alias '%s' " % [output_path, alias_name]
+        cmd << "-keyalg RSA -keysize 2048 -validity %s -keypass '%s' -storepass '%s' " % [valid_days, password, password]
         cmd << "-dname \"CN=#{full_name}, OU=#{org_unit}, O=#{org}, L=#{city_locality}, S=#{state_province}, C=#{country}\""
 
         begin
@@ -40,7 +40,7 @@ module Fastlane
         output_path = File.join(output_dir, keystore_name)
 
         if File.file?(output_path)
-          cmd = "keytool -storepasswd -v -keystore %s -storepass %s -new %s" % [output_path, password, new_password]
+          cmd = "keytool -storepasswd -v -keystore '%s' -storepass '%s' -new '%s'" % [output_path, password, new_password]
           begin
             output = IO.popen(cmd)
             error = output.read
@@ -50,9 +50,9 @@ module Fastlane
             raise ex
           end
 
-          cmd = "keytool -keypasswd -v -keystore %s -alias %s -keypass %s -storepass %s -new %s" % [
+          cmd = "keytool -keypasswd -v -keystore '%s' -alias %s -keypass '%s' -storepass '%s' -new '%s'" % [
             output_path, alias_name, password, new_password, new_password]
-      
+
           begin
             output = IO.popen(cmd)
             error = output.read
