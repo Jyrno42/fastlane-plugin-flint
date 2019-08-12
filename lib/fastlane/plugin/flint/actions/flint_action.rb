@@ -95,7 +95,7 @@ module Fastlane
           # install and activate the keystore
           UI.verbose("Installing keystore '#{keystore_name}'")
           Flint::Utils.import(cert_path, target_path, keystore_name, alias_name, password)
-          Flint::Utils.activate(keystore_name, alias_name, password, params[:keystore_properties_path])
+          Flint::Utils.activate(File.join(params[:target_dir], keystore_name), alias_name, password, params[:keystore_properties_path])
         else
           cert_path = certs.last
           UI.message("Installing keystore...")
@@ -114,7 +114,7 @@ module Fastlane
 
           # Activate the cert
           keystore_properties_path = params[:keystore_properties_path]
-          Flint::Utils.activate(keystore_name, alias_name, password, keystore_properties_path)
+          Flint::Utils.activate(File.join(params[:target_dir], keystore_name), alias_name, password, keystore_properties_path)
 
           Actions.lane_context[SharedValues::FLINT_KEYSTORE_OUTPUT_PATH] =
             File.expand_path(target_path)
