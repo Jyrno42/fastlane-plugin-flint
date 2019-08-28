@@ -94,8 +94,24 @@ module Fastlane
 
           # install and activate the keystore
           UI.verbose("Installing keystore '#{keystore_name}'")
-          Flint::Utils.import(cert_path, target_path, keystore_name, alias_name, password)
-          Flint::Utils.activate(File.join(params[:target_dir], keystore_name), alias_name, password, params[:keystore_properties_path])
+          Flint::Utils.import(
+            cert_path,
+            target_path,
+            keystore_name,
+            alias_name,
+            password
+          )
+          Flint::Utils.activate(
+            File.join(params[:target_dir], keystore_name),
+            alias_name,
+            password,
+            params[:keystore_properties_path]
+          )
+
+          # Print keystore info
+          puts("")
+          puts(Flint::Utils.get_keystore_info(cert_path, password))
+          puts("")
         else
           cert_path = certs.last
           UI.message("Installing keystore...")
@@ -104,7 +120,13 @@ module Fastlane
             UI.verbose("Keystore '#{File.basename(cert_path)}' is already installed on this machine")
           else
             UI.verbose("Installing keystore '#{keystore_name}'")
-            Flint::Utils.import(cert_path, target_path, keystore_name, alias_name, password)
+            Flint::Utils.import(
+              cert_path,
+              target_path,
+              keystore_name,
+              alias_name,
+              password
+            )
           end
 
           # Print keystore info
@@ -113,15 +135,19 @@ module Fastlane
           puts("")
 
           # Activate the cert
-          keystore_properties_path = params[:keystore_properties_path]
-          Flint::Utils.activate(File.join(params[:target_dir], keystore_name), alias_name, password, keystore_properties_path)
-
-          Actions.lane_context[SharedValues::FLINT_KEYSTORE_OUTPUT_PATH] =
-            File.expand_path(target_path)
-
-          Actions.lane_context[SharedValues::FLINT_KEYPROPERTIES_OUTPUT_PATH] =
-            File.expand_path(keystore_properties_path)
+          Flint::Utils.activate(
+            File.join(params[:target_dir], keystore_name),
+            alias_name,
+            password,
+            params[:keystore_properties_path]
+          )
         end
+
+        Actions.lane_context[SharedValues::FLINT_KEYSTORE_OUTPUT_PATH] =
+          File.expand_path(target_path)
+
+        Actions.lane_context[SharedValues::FLINT_KEYPROPERTIES_OUTPUT_PATH] =
+          File.expand_path(params[:keystore_properties_path])
 
         return File.basename(cert_path).gsub(".keystore", ""), files_to_commmit
       end
