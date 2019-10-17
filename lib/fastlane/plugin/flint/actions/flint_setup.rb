@@ -1,6 +1,7 @@
 require 'fastlane/action'
 require_relative '../helper/git_helper'
 require_relative '../helper/encrypt'
+require_relative 'flint_action'
 
 module Fastlane
     module Actions

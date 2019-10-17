@@ -1,5 +1,6 @@
 require 'fastlane/action'
 require_relative '../helper/flint_helper'
+require_relative 'flint_action'
 
 module Fastlane
     module Actions
