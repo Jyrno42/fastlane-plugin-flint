@@ -24,7 +24,9 @@ module Fastlane
                                             git_full_name: params[:git_full_name],
                                             git_user_email: params[:git_user_email],
                                             clone_branch_directly: params[:clone_branch_directly],
-                                            encrypt: Encrypt.new)
+                                            encrypt: Encrypt.configure(
+                                              git_url: params[:git_url]
+                                              ))
 
         had_app_identifier = self.params.fetch(:app_identifier, ask: false)
         self.params[:app_identifier] = '' # we don't really need a value here
@@ -43,7 +45,7 @@ module Fastlane
           unless params[:skip_confirmation]
             if type == "release"
               UI.confirm(
-                "DANGER: By nuking release keys you might not " + 
+                "DANGER: By nuking release keys you might not " +
                 "be able to update your app in the play store. Are you sure?"
               )
             end
@@ -99,7 +101,7 @@ module Fastlane
 
         # Now we need to commit and push all this too
         message = ["[fastlane]", "Nuked", "files", "for", type.to_s].join(" ")
-        GitHelper.commit_changes(params[:workspace], message, self.params[:git_url], params[:git_branch], nil, Encrypt.new)
+        GitHelper.commit_changes(params[:workspace], message, self.params[:git_url], params[:git_branch], nil, Encrypt.configure(git_url: self.params[:git_url]))
       end
 
       private

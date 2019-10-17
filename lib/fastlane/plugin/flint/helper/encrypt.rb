@@ -6,74 +6,89 @@ module Fastlane
       require 'base64'
       require 'openssl'
       require 'securerandom'
+      require 'security'
       require 'shellwords'
 
-      def initialize()
-        # Keep the password in the memory so we can reuse it later on
-        @tmp_password = nil
+      attr_accessor :git_url
+
+      def self.configure(params)
+        return self.new(
+          git_url: params[:git_url]
+        )
+      end
+
+      def initialize(git_url: nil)
+        self.git_url = git_url
+      end
+
+      def encrypt_repo(path: nil)
+        iterate(path) do |current|
+          encrypt(
+            path: current,
+            password: password
+          )
+          UI.success("🔒  Encrypted '#{File.basename(current)}'") if FastlaneCore::Globals.verbose?
+        end
+        UI.success("🔒  Successfully encrypted keystores repo")
+      end
+
+      def decrypt_repo(path: nil, manual_password: nil)
+        iterate(path) do |current|
+          begin
+            decrypt(
+              path: current,
+              password: manual_password || password
+            )
+          rescue
+            UI.error("Couldn't decrypt the repo, please make sure you enter the right password! %s" % manual_password || password)
+
+            UI.user_error!("Invalid password passed via 'FLINT_PASSWORD'") if ENV["FLINT_PASSWORD"]
+
+            clear_password
+            password
+            decrypt_repo(path: path)
+
+            return
+          end
+          UI.success("🔓  Decrypted '#{File.basename(current)}'") if FastlaneCore::Globals.verbose?
+        end
+        UI.success("🔓  Successfully decrypted keystores repo")
+      end
+
+      def store_password(password)
+        Security::InternetPassword.add(server_name(self.git_url), "", password)
+      end
+
+      def clear_password
+        Security::InternetPassword.delete(server: server_name(self.git_url))
       end
 
       def server_name(git_url)
         ["flint", git_url].join("_")
       end
 
-      def password(git_url)
+      def password
         password = ENV["FLINT_PASSWORD"]
         unless password
-          if @tmp_password
-            password = @tmp_password
-          end
+          item = Security::InternetPassword.find(server: server_name(self.git_url))
+          password = item.password if item
         end
 
-        unless password && password != ''
+        unless password && password.to_s.length > 0
           if !UI.interactive?
             UI.error("The FLINT_PASSWORD environment variable did not contain a password.")
             UI.error("Bailing out instead of asking for a password, since this is non-interactive mode.")
             UI.user_error!("Try setting the FLINT_PASSWORD environment variable, or temporarily enable interactive mode to store a password.")
           else
             UI.important("Enter the passphrase that should be used to encrypt/decrypt your keystores")
-            UI.important("Make sure to remember the password, as you'll need it when you run flint again")
+            UI.important("This passphrase is specific per repository and will be stored in your local keychain")
+            UI.important("Make sure to remember the password, as you'll need it when you run flint on a different machine")
             password = ChangePassword.ask_password(confirm: true)
-            store_password(git_url, password)
+            store_password(password)
           end
         end
 
         return password
-      end
-
-      def store_password(git_url, password)
-        @tmp_password = password
-      end
-
-      def clear_password(git_url)
-        @tmp_password = ""
-      end
-
-      def encrypt_repo(path: nil, git_url: nil)
-        iterate(path) do |current|
-          encrypt(path: current,
-            password: password(git_url))
-          UI.success("🔒  Encrypted '#{File.basename(current)}'") if FastlaneCore::Globals.verbose?
-        end
-        UI.success("🔒  Successfully encrypted keystores repo")
-      end
-
-      def decrypt_repo(path: nil, git_url: nil, manual_password: nil)
-        iterate(path) do |current|
-          begin
-            decrypt(path: current,
-              password: manual_password || password(git_url))
-          rescue
-            UI.error("Couldn't decrypt the repo, please make sure you enter the right password! %s" % manual_password || password(git_url))
-            UI.user_error!("Invalid password passed via 'FLINT_PASSWORD'") if ENV["FLINT_PASSWORD"]
-            clear_password(git_url)
-            password(git_url)
-            decrypt_repo(path: path, git_url: git_url)
-            return
-          end
-          UI.success("🔓  Decrypted '#{File.basename(current)}'") if FastlaneCore::Globals.verbose?
-        end
-        UI.success("🔓  Successfully decrypted keystores repo")
       end
 
       private

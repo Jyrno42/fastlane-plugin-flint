@@ -7,6 +7,11 @@ module Fastlane
   module Flint
     class Utils
       def self.import(item_path, target_path, keystore_name, alias_name, password)
+        dirname = File.dirname(target_path)
+        unless File.directory?(dirname)
+          FileUtils.mkdir_p(dirname)
+        end
+
         FileUtils.cp(item_path, target_path)
       end
 
